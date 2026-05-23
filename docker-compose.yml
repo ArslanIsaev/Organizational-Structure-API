@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: orgapi
+      POSTGRES_PASSWORD: orgapi_secret
+      POSTGRES_DB: orgapi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orgapi -d orgapi_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: orgapi
+      DB_PASSWORD: orgapi_secret
+      DB_NAME: orgapi_db
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
